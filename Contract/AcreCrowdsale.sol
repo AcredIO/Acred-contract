@@ -15,12 +15,14 @@ contract AcreCrowdsale is AcreSale {
         _addressOfTokenUsedAsReward) public {
     }
     
+    function startCrowdsale() onlyOwners public {
+        startSale(CROWDSALE_DURATION_TIME);
+    }
+    
     function getBonusRate() public constant returns(uint8 bonusRate) {
-        if      (now <= startTime + (6*TIME_FACTOR))  { bonusRate = 30; } // 6.4~6.9, 1~6 days
-        else if (now <= startTime + (12*TIME_FACTOR)) { bonusRate = 25; } // 6.10~6.15, 7~12 days
-        else if (now <= startTime + (18*TIME_FACTOR)) { bonusRate = 20; } // 6.16~6.21, 13~18 days
-        else if (now <= startTime + (24*TIME_FACTOR)) { bonusRate = 15; } // 6.22~6.27, 19~24 days    
-        else if (now <= startTime + (30*TIME_FACTOR)) { bonusRate = 10; } // 6.28~7.3, 25~30 days    
-        else                                          { bonusRate = 0; }  // later
+        if      (now <= startSaleTime + (8*TIME_FACTOR))  { bonusRate = 20; } // 6.11~6.18, 8days
+        else if (now <= startSaleTime + (15*TIME_FACTOR)) { bonusRate = 15; } // 6.19~6.25, 7days
+        else if (now <= startSaleTime + (22*TIME_FACTOR)) { bonusRate = 10; } // 6.26~7.2, 7days
+        else                                              { bonusRate = 0; }  // 
     }
 }

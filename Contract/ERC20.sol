@@ -18,8 +18,8 @@ contract TokenERC20 {
     mapping (address => mapping (address => uint)) public allowance;
 
     event logTransfer(address indexed from, address indexed to, uint value);
+    event logTransferFrom(address indexed from, address indexed to, address indexed spender, uint value);
     event logApproval(address indexed owner, address indexed spender, uint value);
-    event logBurn(address indexed owner, uint value);
     
     function TokenERC20(
         string _tokenName,
@@ -31,7 +31,7 @@ contract TokenERC20 {
         symbol = _tokenSymbol;
         decimals = _tokenDecimals;
         
-        totalSupply = _initialSupply * 10 ** uint(decimals);
+        totalSupply = _initialSupply;
         balanceOf[msg.sender] = totalSupply;
     }
 
@@ -55,6 +55,7 @@ contract TokenERC20 {
         require(_value <= allowance[_from][msg.sender]);     
         allowance[_from][msg.sender] = allowance[_from][msg.sender].sub(_value);
         _transfer(_from, _to, _value);
+        logTransferFrom(_from, _to, msg.sender, _value);
         return true;
     }
 
@@ -70,23 +71,5 @@ contract TokenERC20 {
             spender.receiveApproval(msg.sender, _value, this, _extraData);
             return true;
         }
-    }
-
-    function burn(uint _value) public returns (bool success) {
-        require(balanceOf[msg.sender] >= _value);   
-        balanceOf[msg.sender] = balanceOf[msg.sender].sub(_value);            
-        totalSupply = totalSupply.sub(_value);                      
-        logBurn(msg.sender, _value);
-        return true;
-    }
-
-    function burnFrom(address _from, uint _value) public returns (bool success) {
-        require(balanceOf[_from] >= _value);                
-        require(_value <= allowance[_from][msg.sender]); 
-        balanceOf[_from] = balanceOf[_from].sub(_value);                         
-        allowance[_from][msg.sender] = allowance[_from][msg.sender].sub(_value);             
-        totalSupply = totalSupply.sub(_value);                              
-        logBurn(_from, _value);
-        return true;
     }
 }

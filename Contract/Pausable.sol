@@ -18,20 +18,20 @@ contract Pausable is MultiOwnable {
         _;
     }
     
-    modifier bypassMultiOwner() {
-        if(!IsExistedOwner(msg.sender)) {
+    modifier conditionalPaused() {
+        if(!isExistedOwner(msg.sender)) {
             require(!paused);
         }
         _;
     }
     
-    function pause() onlyMultiOwner whenNotPaused public returns (bool success) {
+    function pause() onlyOwners whenNotPaused public returns (bool success) {
         paused = true;
         logPause();
         return true;
     }
   
-    function unpause() onlyMultiOwner whenPaused public returns (bool success) {
+    function unpause() onlyOwners whenPaused public returns (bool success) {
         paused = false;
         logUnpause();
         return true;

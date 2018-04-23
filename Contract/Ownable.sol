@@ -1,13 +1,13 @@
 pragma solidity ^0.4.18;
 
-import "./AcreTokenConfig.sol";
+import "./AcreConfig.sol";
 
-contract Ownable is AcreTokenConfig {
+contract Ownable is AcreConfig {
     address public owner;
     address public reservedOwner;
-    uint public startTime;
+    uint public ownershipDeadline;
     
-    event logTransferOwnership(address indexed oldOwner, address indexed newOwner);
+    event logReservedOwnership(address indexed oldOwner, address indexed newOwner);
     event logConfirmOwnership(address indexed oldOwner, address indexed newOwner);
     event logCancelOwnership(address indexed oldOwner, address indexed newOwner);
     
@@ -16,24 +16,24 @@ contract Ownable is AcreTokenConfig {
         _;
     }
     
-    modifier confirmDeadline { 
-        require(now >= (startTime + (OWNERSHIP_DURATION_TIME * TIME_FACTOR))); 
+    modifier afterOwnershipDeadline { 
+        require(now > ownershipDeadline); 
         _; 
     }
 
     function Ownable() public {
         owner = msg.sender;
     }
-
-    function transferOwnership(address newOwner) onlyOwner public returns (bool success) {
+    
+    function reservedOwnership(address newOwner) onlyOwner public returns (bool success) {
         require(newOwner != address(0));
-        logTransferOwnership(owner, newOwner);
+        logReservedOwnership(owner, newOwner);
         reservedOwner = newOwner;
-        startTime = now;
+		ownershipDeadline = now + (OWNERSHIP_DURATION_TIME * TIME_FACTOR);
         return true;
     }
     
-    function confirmOwnership() onlyOwner confirmDeadline public returns (bool success) {
+    function confirmOwnership() onlyOwner afterOwnershipDeadline public returns (bool success) {
         require(reservedOwner != address(0));
         logConfirmOwnership(owner, reservedOwner);
         owner = reservedOwner;

@@ -2,11 +2,11 @@ pragma solidity ^0.4.18;
 
 import "./AcreToken.sol";
 
-contract AcreSale is Ownable {
+contract AcreSale is MultiOwnable {
     using SafeMath for uint;
     
-    uint public deadline;
-    uint public startTime;
+    uint public saleDeadline;
+    uint public startSaleTime;
     uint public softCapToken;
     uint public hardCapToken;
     uint public receivedEther;
@@ -17,7 +17,7 @@ contract AcreSale is Ownable {
     bool public saleOpened = false;
     
     mapping(uint=>address) public indexedFunders;
-    mapping(address => Property) public fundersProperty;
+    mapping(address => Order) public orders;
     uint public funderCount = 0;
     
     event logStart(uint softCapToken, uint hardCapToken, uint minEther, uint exchangeRate, uint startTime, uint deadline);
@@ -27,15 +27,15 @@ contract AcreSale is Ownable {
     event logCheckGoalReached(uint raisedAmount, uint raisedToken, bool reached);
     event logCheckFunderKYC(address indexed backer, bool isKYC);
     
-    struct Property {
+    struct Order {
         uint paymentEther;
         uint reservedToken;
         bool withdrawed;
         bool isKYC;
     }
     
-    modifier afterDeadline { 
-        require(now >= deadline); 
+    modifier afterSaleDeadline { 
+        require(now > saleDeadline); 
         _; 
     }
     
@@ -51,29 +51,29 @@ contract AcreSale is Ownable {
         tokenReward = AcreToken(_addressOfTokenUsedAsReward);
     }
     
-    function start(uint _durationTime) onlyOwner public {
+    function startSale(uint _durationTime) onlyOwners public {
         require(sendEther != address(0));
         require(softCapToken > 0 && softCapToken <= hardCapToken);
         require(hardCapToken > 0 && hardCapToken <= tokenReward.balanceOf(this));
         require(_durationTime > 0);
-        require(startTime == 0);
+        require(startSaleTime == 0);
 
-        startTime = now;
-        deadline = startTime + (_durationTime * TIME_FACTOR);
+        startSaleTime = now;
+        saleDeadline = startSaleTime + (_durationTime * TIME_FACTOR);
         saleOpened = true;
         
-        logStart(softCapToken, hardCapToken, MIN_ETHER, EXCHANGE_RATE, startTime, deadline);
+        logStart(softCapToken, hardCapToken, MIN_ETHER, EXCHANGE_RATE, startSaleTime, saleDeadline);
     }
     
     // get
-    function getRemainingTime() public constant returns(uint remainTime) {
-        if(now < deadline) {
-            remainTime = (deadline - now) / (1 minutes);
+    function getRemainingSellingTime() public constant returns(uint remainingTime) {
+        if(now <= saleDeadline) {
+            remainingTime = getRemainingTime((saleDeadline - now));
         }
     }
     
-    function getRemainingToken() public constant returns(uint remainToken) {
-        remainToken = hardCapToken - soldToken;
+    function getRemainingSellingToken() public constant returns(uint remainingToken) {
+        remainingToken = hardCapToken - soldToken;
     }
     
     function getContractBalance() public constant returns(uint blance) {
@@ -83,7 +83,7 @@ contract AcreSale is Ownable {
     function getBonusRate() public constant returns(uint8 bonusRate);
     
     // check
-    function checkGoalReached() onlyOwner afterDeadline public {
+    function checkGoalReached() onlyOwners afterSaleDeadline public {
         if(saleOpened) {
             if(soldToken >= softCapToken) {
                 fundingGoalReached = true;
@@ -93,19 +93,19 @@ contract AcreSale is Ownable {
         }
     }
     
-    function checkFunderKYC(address _backer, bool _isKYC) onlyOwner public {
-        require(fundersProperty[_backer].isKYC != _isKYC);
-        fundersProperty[_backer].isKYC = _isKYC;
+    function checkFunderKYC(address _backer, bool _isKYC) onlyOwners public {
+        require(orders[_backer].isKYC != _isKYC);
+        orders[_backer].isKYC = _isKYC;
         logCheckFunderKYC(_backer, _isKYC);
     }
     
     // withdrawal
-    function withdrawalOwner() onlyOwner afterDeadline public {
+    function withdrawalOwner() onlyOwners afterSaleDeadline public {
         require(!saleOpened);
         
         if(fundingGoalReached) {
-            require(softCapToken-soldToken > 0);
-            uint val = softCapToken-soldToken;
+            require(hardCapToken-soldToken > 0);
+            uint val = hardCapToken-soldToken;
             tokenReward.transfer(msg.sender, val);
             logWithdrawalToken(msg.sender, val, true, true);
         }
@@ -117,39 +117,37 @@ contract AcreSale is Ownable {
         }
     }
     
-    function withdrawalFunder(address _backer) onlyOwner afterDeadline public {
+    function withdrawalFunder(address _backer) onlyOwners afterSaleDeadline public {
         require(!saleOpened);
-        require(!fundersProperty[_backer].withdrawed);
+        require(!orders[_backer].withdrawed);
             
         if(fundingGoalReached) {
             // token    
-            require(fundersProperty[_backer].reservedToken > 0);
-            require(fundersProperty[_backer].isKYC);
-            tokenReward.transfer(_backer, fundersProperty[_backer].reservedToken);
-            fundersProperty[_backer].withdrawed = true;
+            require(orders[_backer].reservedToken > 0);
+            require(orders[_backer].isKYC);
+            tokenReward.transfer(_backer, orders[_backer].reservedToken);
+            orders[_backer].withdrawed = true;
             logWithdrawalToken(
                 _backer, 
-                fundersProperty[_backer].reservedToken,
-                fundersProperty[_backer].withdrawed,
+                orders[_backer].reservedToken,
+                orders[_backer].withdrawed,
                 false);
         }
     }
     
-    function withdrawalToken(uint _value) onlyOwner public {
-        tokenReward.transfer(msg.sender, _value);
-        logWithdrawalToken(msg.sender, _value, true, true);
+    function withdrawalFunderFromIndex(uint _Index) onlyOwners afterSaleDeadline public {
+        withdrawalFunder(indexedFunders[_Index]);
     }
     
-    function withdrawalEther(uint _amount) onlyOwner public {
-        require(address(this).balance >= _amount);
-        msg.sender.transfer(_amount);
-        logWithdrawalEther(msg.sender, _amount, true, true);
+    function withdrawalToken(uint _value) onlyOwners public {
+        tokenReward.transfer(msg.sender, _value);
+        logWithdrawalToken(msg.sender, _value, true, true);
     }
     
     // payable
     function () payable public {
         require(saleOpened);
-        require(now <= deadline);
+        require(now <= saleDeadline);
         require(MIN_ETHER <= msg.value);
         
         uint amount = msg.value;
@@ -162,13 +160,13 @@ contract AcreSale is Ownable {
         sendEther.transfer(amount);
         
         // funder info
-        if(fundersProperty[msg.sender].paymentEther == 0) {
+        if(orders[msg.sender].paymentEther == 0) {
             indexedFunders[funderCount] = msg.sender;
             funderCount++;
         }
         
-        fundersProperty[msg.sender].paymentEther = fundersProperty[msg.sender].paymentEther.add(amount);
-        fundersProperty[msg.sender].reservedToken = fundersProperty[msg.sender].reservedToken.add(token);
+        orders[msg.sender].paymentEther = orders[msg.sender].paymentEther.add(amount);
+        orders[msg.sender].reservedToken = orders[msg.sender].reservedToken.add(token);
         receivedEther = receivedEther.add(amount);
         soldToken = soldToken.add(token);
         

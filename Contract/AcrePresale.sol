@@ -15,9 +15,13 @@ contract AcrePresale is AcreSale {
         _addressOfTokenUsedAsReward) public {
     }
     
+    function startPresale() onlyOwners public {
+        startSale(PRESALE_DURATION_TIME);
+    }
+    
     function getBonusRate() public constant returns(uint8 bonusRate) {
-        if      (now <= startTime + (8*TIME_FACTOR))  { bonusRate = 50; } // 4.23~4.30, 1~8 days  
-        else if (now <= startTime + (19*TIME_FACTOR)) { bonusRate = 40; } // 5.1~5.11, 9~19 days
-        else                                          { bonusRate = 0; }  // later
+        if      (now <= startSaleTime + (8*TIME_FACTOR))  { bonusRate = 30; } // 5.8~5.15, 8days  
+        else if (now <= startSaleTime + (15*TIME_FACTOR)) { bonusRate = 25; } // 5.16~5.22, 7days
+        else                                              { bonusRate = 0; }  // 
     } 
 }
