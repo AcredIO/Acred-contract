@@ -9,38 +9,41 @@ contract MultiOwnable is Ownable {
     event logRevokeOwners(address indexed owner);
     
     modifier onlyOwners {
-        require(IsExistedOwner(msg.sender));
+        require(isExistedOwner(msg.sender));
+        _;
+    }
+    
+    modifier onlyOwnersWithOwner {
+        require(isExistedOwner(msg.sender) || msg.sender == owner);
         _;
     }
     
     modifier onlyOwnersWithoutOwner {
-        require(IsExistedOwner(msg.sender));
-        require(msg.sender != owner);
+        require(isExistedOwner(msg.sender) && msg.sender != owner);
         _;
     }
     
     function MultiOwnable() public {
         owners.length = MULTI_OWNER_COUNT;
-        owners[0] = msg.sender;
     }
     
     function grantOwners(address _owner) onlyOwner public returns (bool success) {
-        require(!IsExistedOwner(_owner));
-        require(IsEmptyOwner());
+        require(!isExistedOwner(_owner));
+        require(isEmptyOwner());
         owners[getEmptyIndex()] = _owner;
         logGrantOwners(_owner);
         return true;
     }
 
     function revokeOwners(address _owner) onlyOwner public returns (bool success) {
-        require(IsExistedOwner(_owner));
+        require(isExistedOwner(_owner));
         owners[getOwnerIndex(_owner)] = address(0);
         logRevokeOwners(_owner);
         return true;
     }
     
     // helper
-    function IsExistedOwner(address _owner) internal constant returns (bool) {
+    function isExistedOwner(address _owner) internal constant returns (bool) {
         for(uint8 i = 0; i < MULTI_OWNER_COUNT; ++i) {
             if(owners[i] == _owner) {
                 return true;
@@ -56,7 +59,7 @@ contract MultiOwnable is Ownable {
         }
     }
     
-    function IsEmptyOwner() internal constant returns (bool) {
+    function isEmptyOwner() internal constant returns (bool) {
         for(uint8 i = 0; i < MULTI_OWNER_COUNT; ++i) {
             if(owners[i] == address(0)) {
                 return true;

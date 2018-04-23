@@ -7,7 +7,7 @@ contract AcreConfig {
     uint internal constant OWNERSHIP_DURATION_TIME = 7; // 7 days
     
     // MultiOwnable
-    uint8 internal constant MULTI_OWNER_COUNT = 5; // 5 accounts, include master
+    uint8 internal constant MULTI_OWNER_COUNT = 5; // 5 accounts, exclude master
     
     // Lockable
     uint internal constant LOCKUP_DURATION_TIME = 10; // 365 days

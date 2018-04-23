@@ -15,7 +15,7 @@ contract AcreCrowdsale is AcreSale {
         _addressOfTokenUsedAsReward) public {
     }
     
-    function startCrowdsale() onlyOwners public {
+    function startCrowdsale() onlyOwnersWithOwner public {
         startSale(CROWDSALE_DURATION_TIME);
     }
     

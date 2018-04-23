@@ -7,7 +7,7 @@ contract Ownable is AcreConfig {
     address public reservedOwner;
     uint public ownershipDeadline;
     
-    event logReservedOwnership(address indexed oldOwner, address indexed newOwner);
+    event logReserveOwnership(address indexed oldOwner, address indexed newOwner);
     event logConfirmOwnership(address indexed oldOwner, address indexed newOwner);
     event logCancelOwnership(address indexed oldOwner, address indexed newOwner);
     
@@ -25,9 +25,9 @@ contract Ownable is AcreConfig {
         owner = msg.sender;
     }
     
-    function reservedOwnership(address newOwner) onlyOwner public returns (bool success) {
+    function reserveOwnership(address newOwner) onlyOwner public returns (bool success) {
         require(newOwner != address(0));
-        logReservedOwnership(owner, newOwner);
+        logReserveOwnership(owner, newOwner);
         reservedOwner = newOwner;
 		ownershipDeadline = now + (OWNERSHIP_DURATION_TIME * TIME_FACTOR);
         return true;

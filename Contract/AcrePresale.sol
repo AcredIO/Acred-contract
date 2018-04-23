@@ -15,7 +15,7 @@ contract AcrePresale is AcreSale {
         _addressOfTokenUsedAsReward) public {
     }
     
-    function startPresale() onlyOwners public {
+    function startPresale() onlyOwnersWithOwner public {
         startSale(PRESALE_DURATION_TIME);
     }
     

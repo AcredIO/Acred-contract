@@ -1,74 +1,26 @@
 pragma solidity ^0.4.18;
 
-import "./Ownable.sol";
+import "./Pausable.sol";
 
-contract MultiOwnable is Ownable {
-    address[] public owners;
+contract Lockable is Pausable {
+    mapping (address => uint) public locked;
     
-    event logGrantOwners(address indexed owner);
-    event logRevokeOwners(address indexed owner);
+    event logLockup(address indexed target, uint startTime, uint deadline);
     
-    modifier onlyOwners {
-        require(isExistedOwner(msg.sender));
+    modifier afterLockedDeadline {
+        require(now > locked[msg.sender]);
         _;
     }
-    
-    modifier onlyOwnersWithoutOwner {
-        require(isExistedOwner(msg.sender));
-        require(msg.sender != owner);
-        _;
-    }
-    
-    function MultiOwnable() public {
-        owners.length = MULTI_OWNER_COUNT;
-        owners[0] = msg.sender;
-    }
-    
-    function grantOwners(address _owner) onlyOwner public returns (bool success) {
-        require(!isExistedOwner(_owner));
-        require(isEmptyOwner());
-        owners[getEmptyIndex()] = _owner;
-        logGrantOwners(_owner);
-        return true;
-    }
 
-    function revokeOwners(address _owner) onlyOwner public returns (bool success) {
-        require(isExistedOwner(_owner));
-        owners[getOwnerIndex(_owner)] = address(0);
-        logRevokeOwners(_owner);
+    function lockup(address _target) onlyOwner afterLockedDeadline public returns (bool success) {
+	    require(!isExistedOwner(_target) && owner != _target);
+        locked[_target] = now + (LOCKUP_DURATION_TIME * TIME_FACTOR);
+        logLockup(_target, now, locked[_target]);
         return true;
     }
     
-    // helper
-    function isExistedOwner(address _owner) internal constant returns (bool) {
-        for(uint8 i = 0; i < MULTI_OWNER_COUNT; ++i) {
-            if(owners[i] == _owner) {
-                return true;
-            }
-        }
-    }
-    
-    function getOwnerIndex(address _owner) internal constant returns (uint) {
-        for(uint8 i = 0; i < MULTI_OWNER_COUNT; ++i) {
-            if(owners[i] == _owner) {
-                return i;
-            }
-        }
-    }
-    
-    function isEmptyOwner() internal constant returns (bool) {
-        for(uint8 i = 0; i < MULTI_OWNER_COUNT; ++i) {
-            if(owners[i] == address(0)) {
-                return true;
-            }
-        }
-    }
-    
-    function getEmptyIndex() internal constant returns (uint) {
-        for(uint8 i = 0; i < MULTI_OWNER_COUNT; ++i) {
-            if(owners[i] == address(0)) {
-                return i;
-            }
-        }
+    function isLockup(address _target) internal constant returns (bool) {
+        if(now <= locked[_target])
+            return true;
     }
 }

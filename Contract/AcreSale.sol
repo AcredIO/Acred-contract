@@ -51,7 +51,7 @@ contract AcreSale is MultiOwnable {
         tokenReward = AcreToken(_addressOfTokenUsedAsReward);
     }
     
-    function startSale(uint _durationTime) onlyOwners public {
+    function startSale(uint _durationTime) onlyOwnersWithOwner public {
         require(sendEther != address(0));
         require(softCapToken > 0 && softCapToken <= hardCapToken);
         require(hardCapToken > 0 && hardCapToken <= tokenReward.balanceOf(this));
@@ -83,7 +83,7 @@ contract AcreSale is MultiOwnable {
     function getBonusRate() public constant returns(uint8 bonusRate);
     
     // check
-    function checkGoalReached() onlyOwners afterSaleDeadline public {
+    function checkGoalReached() onlyOwnersWithOwner afterSaleDeadline public {
         if(saleOpened) {
             if(soldToken >= softCapToken) {
                 fundingGoalReached = true;
@@ -93,14 +93,14 @@ contract AcreSale is MultiOwnable {
         }
     }
     
-    function checkFunderKYC(address _backer, bool _isKYC) onlyOwners public {
+    function checkFunderKYC(address _backer, bool _isKYC) onlyOwnersWithOwner public {
         require(orders[_backer].isKYC != _isKYC);
         orders[_backer].isKYC = _isKYC;
         logCheckFunderKYC(_backer, _isKYC);
     }
     
     // withdrawal
-    function withdrawalOwner() onlyOwners afterSaleDeadline public {
+    function withdrawalOwner() onlyOwnersWithOwner afterSaleDeadline public {
         require(!saleOpened);
         
         if(fundingGoalReached) {
@@ -117,7 +117,7 @@ contract AcreSale is MultiOwnable {
         }
     }
     
-    function withdrawalFunder(address _backer) onlyOwners afterSaleDeadline public {
+    function withdrawalFunder(address _backer) onlyOwnersWithOwner afterSaleDeadline public {
         require(!saleOpened);
         require(!orders[_backer].withdrawed);
             
@@ -135,11 +135,11 @@ contract AcreSale is MultiOwnable {
         }
     }
     
-    function withdrawalFunderFromIndex(uint _Index) onlyOwners afterSaleDeadline public {
+    function withdrawalFunderFromIndex(uint _Index) onlyOwnersWithOwner afterSaleDeadline public {
         withdrawalFunder(indexedFunders[_Index]);
     }
     
-    function withdrawalToken(uint _value) onlyOwners public {
+    function withdrawalToken(uint _value) onlyOwnersWithOwner public {
         tokenReward.transfer(msg.sender, _value);
         logWithdrawalToken(msg.sender, _value, true, true);
     }

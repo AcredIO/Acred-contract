@@ -33,25 +33,25 @@ contract AcreToken is Lockable, TokenERC20 {
         return super._transfer(_from, _to, _value);
     }
     
-    function freezeAccount(address _target) onlyOwners public returns (bool success) {
+    function freezeAccount(address _target) onlyOwnersWithOwner public returns (bool success) {
         require(!frozenAccount[_target]);
         frozenAccount[_target] = true;
         logFrozenAccount(_target, true);
         return true;
     }
     
-    function unfreezeAccount(address _target) onlyOwners public returns (bool success) {
+    function unfreezeAccount(address _target) onlyOwnersWithOwner public returns (bool success) {
         require(frozenAccount[_target]);
         frozenAccount[_target] = false;
         logFrozenAccount(_target, false);
         return true;
     }
     
-    function withdrawalToken(uint _value) onlyOwners public returns (bool success) {
+    function withdrawalToken(uint _value) onlyOwnersWithOwner public returns (bool success) {
         return _transfer(this, msg.sender, _value);
     }
     
-    function burn(uint _value) onlyOwners public returns (bool success) {
+    function burn(uint _value) onlyOwnersWithOwner public returns (bool success) {
         require(balanceOf[msg.sender] >= _value);   
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(_value);            
         totalSupply = totalSupply.sub(_value);                      
@@ -59,7 +59,7 @@ contract AcreToken is Lockable, TokenERC20 {
         return true;
     }
     
-    function mining(address _recipient, uint _value) onlyOwners public returns (bool success) {
+    function mining(address _recipient, uint _value) onlyOwnersWithOwner public returns (bool success) {
         require(_recipient != address(0));
         require(!isLockup(_recipient));
         require(totalMineSupply + _value <= MAX_MINING_SUPPLY);
