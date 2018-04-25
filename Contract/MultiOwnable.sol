@@ -13,12 +13,12 @@ contract MultiOwnable is Ownable {
         _;
     }
     
-    modifier onlyOwnersWithOwner {
+    modifier onlyOwnersWithMaster {
         require(isExistedOwner(msg.sender) || msg.sender == owner);
         _;
     }
     
-    modifier onlyOwnersWithoutOwner {
+    modifier onlyOwnersWithoutMaster {
         require(isExistedOwner(msg.sender) && msg.sender != owner);
         _;
     }
@@ -73,5 +73,9 @@ contract MultiOwnable is Ownable {
                 return i;
             }
         }
+    }
+    
+    function isManageable(address _owner) internal constant returns (bool) {
+        return isExistedOwner(_owner) || owner == _owner;
     }
 }
