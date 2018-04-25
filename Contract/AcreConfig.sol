@@ -1,7 +1,7 @@
 pragma solidity ^0.4.18;
 
 contract AcreConfig {
-    uint internal constant TIME_FACTOR = 1 minutes;
+    uint internal constant TIME_FACTOR = 1 days;
 
     // Ownable
     uint internal constant OWNERSHIP_DURATION_TIME = 7; // 7 days
@@ -10,11 +10,11 @@ contract AcreConfig {
     uint8 internal constant MULTI_OWNER_COUNT = 5; // 5 accounts, exclude master
     
     // Lockable
-    uint internal constant LOCKUP_DURATION_TIME = 10; // 365 days
+    uint internal constant LOCKUP_DURATION_TIME = 365; // 365 days
     
     // AcreToken
-    string internal constant TOKEN_NAME            = "TestAcre";
-    string internal constant TOKEN_SYMBOL          = "TestACRE";
+    string internal constant TOKEN_NAME            = "Acre";
+    string internal constant TOKEN_SYMBOL          = "ACRE";
     uint8  internal constant TOKEN_DECIMALS        = 18;
     
     uint   internal constant INIT_SUPPLY           = 1*1e8 * 10 ** uint(TOKEN_DECIMALS); // supply
