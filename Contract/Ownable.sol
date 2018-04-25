@@ -16,11 +16,6 @@ contract Ownable is AcreConfig {
         _;
     }
     
-    modifier afterOwnershipDeadline { 
-        require(now > ownershipDeadline); 
-        _; 
-    }
-
     function Ownable() public {
         owner = msg.sender;
     }
@@ -33,8 +28,9 @@ contract Ownable is AcreConfig {
         return true;
     }
     
-    function confirmOwnership() onlyOwner afterOwnershipDeadline public returns (bool success) {
+    function confirmOwnership() onlyOwner public returns (bool success) {
         require(reservedOwner != address(0));
+        require(now > ownershipDeadline);
         logConfirmOwnership(owner, reservedOwner);
         owner = reservedOwner;
         reservedOwner = address(0);
