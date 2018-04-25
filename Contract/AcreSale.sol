@@ -51,7 +51,7 @@ contract AcreSale is MultiOwnable {
         tokenReward = AcreToken(_addressOfTokenUsedAsReward);
     }
     
-    function startSale(uint _durationTime) onlyOwnersWithOwner public {
+    function startSale(uint _durationTime) onlyOwnersWithMaster public {
         require(sendEther != address(0));
         require(softCapToken > 0 && softCapToken <= hardCapToken);
         require(hardCapToken > 0 && hardCapToken <= tokenReward.balanceOf(this));
@@ -68,12 +68,16 @@ contract AcreSale is MultiOwnable {
     // get
     function getRemainingSellingTime() public constant returns(uint remainingTime) {
         if(now <= saleDeadline) {
-            remainingTime = getRemainingTime((saleDeadline - now));
+            remainingTime = getMinutes(saleDeadline - now);
         }
     }
     
     function getRemainingSellingToken() public constant returns(uint remainingToken) {
         remainingToken = hardCapToken - soldToken;
+    }
+    
+    function getReachedSoftcap() public constant returns(bool reachedSoftcap) {
+        reachedSoftcap = soldToken >= softCapToken;
     }
     
     function getContractBalance() public constant returns(uint blance) {
@@ -83,9 +87,9 @@ contract AcreSale is MultiOwnable {
     function getBonusRate() public constant returns(uint8 bonusRate);
     
     // check
-    function checkGoalReached() onlyOwnersWithOwner afterSaleDeadline public {
+    function checkGoalReached() onlyOwnersWithMaster afterSaleDeadline public {
         if(saleOpened) {
-            if(soldToken >= softCapToken) {
+            if(getReachedSoftcap()) {
                 fundingGoalReached = true;
             }
             saleOpened = false;
@@ -93,14 +97,14 @@ contract AcreSale is MultiOwnable {
         }
     }
     
-    function checkFunderKYC(address _backer, bool _isKYC) onlyOwnersWithOwner public {
+    function checkFunderKYC(address _backer, bool _isKYC) onlyOwnersWithMaster public {
         require(orders[_backer].isKYC != _isKYC);
         orders[_backer].isKYC = _isKYC;
         logCheckFunderKYC(_backer, _isKYC);
     }
     
     // withdrawal
-    function withdrawalOwner() onlyOwnersWithOwner afterSaleDeadline public {
+    function withdrawalOwner() onlyOwnersWithMaster afterSaleDeadline public {
         require(!saleOpened);
         
         if(fundingGoalReached) {
@@ -117,7 +121,7 @@ contract AcreSale is MultiOwnable {
         }
     }
     
-    function withdrawalFunder(address _backer) onlyOwnersWithOwner afterSaleDeadline public {
+    function withdrawalFunder(address _backer) onlyOwnersWithMaster afterSaleDeadline public {
         require(!saleOpened);
         require(!orders[_backer].withdrawed);
             
@@ -135,11 +139,11 @@ contract AcreSale is MultiOwnable {
         }
     }
     
-    function withdrawalFunderFromIndex(uint _Index) onlyOwnersWithOwner afterSaleDeadline public {
+    function withdrawalFunderFromIndex(uint _Index) onlyOwnersWithMaster afterSaleDeadline public {
         withdrawalFunder(indexedFunders[_Index]);
     }
     
-    function withdrawalToken(uint _value) onlyOwnersWithOwner public {
+    function withdrawalToken(uint _value) onlyOwnersWithMaster public {
         tokenReward.transfer(msg.sender, _value);
         logWithdrawalToken(msg.sender, _value, true, true);
     }
