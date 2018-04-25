@@ -17,10 +17,10 @@ contract AcreConfig {
     string internal constant TOKEN_SYMBOL          = "TestACRE";
     uint8  internal constant TOKEN_DECIMALS        = 18;
     
-    uint   internal constant INIT_SUPPLY           = 2*1e8 * 10 ** uint(TOKEN_DECIMALS); // supply
-    uint   internal constant CAPITAL_SUPPLY        = 1*1e8 * 10 ** uint(TOKEN_DECIMALS); // supply
+    uint   internal constant INIT_SUPPLY           = 1*1e8 * 10 ** uint(TOKEN_DECIMALS); // supply
+    uint   internal constant CAPITAL_SUPPLY        = 4*1e7 * 10 ** uint(TOKEN_DECIMALS); // supply
     uint   internal constant PRE_PAYMENT_SUPPLY    = 1*1e7 * 10 ** uint(TOKEN_DECIMALS); // supply
-    uint   internal constant MAX_MINING_SUPPLY     = 8*1e8 * 10 ** uint(TOKEN_DECIMALS); // supply
+    uint   internal constant MAX_MINING_SUPPLY     = 4*1e8 * 10 ** uint(TOKEN_DECIMALS); // supply
     
     // Sale
     uint internal constant MIN_ETHER               = 5*1e17; // 0.5 ether
@@ -29,7 +29,15 @@ contract AcreConfig {
     uint internal constant CROWDSALE_DURATION_TIME = 30;     // 6.11~7.2
     
     // helper
-    function getRemainingTime(uint _time) internal pure returns(uint) {
+    function getDays(uint _time) internal pure returns(uint) {
+        return _time / 1 days;
+    }
+    
+    function getHours(uint _time) internal pure returns(uint) {
+        return _time / 1 hours;
+    }
+    
+    function getMinutes(uint _time) internal pure returns(uint) {
         return _time / 1 minutes;
     }
 }
