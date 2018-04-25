@@ -7,18 +7,14 @@ contract Lockable is Pausable {
     
     event logLockup(address indexed target, uint startTime, uint deadline);
     
-    modifier afterLockedDeadline {
-        require(now > locked[msg.sender]);
-        _;
-    }
-
-    function lockup(address _target) onlyOwner afterLockedDeadline public returns (bool success) {
-	    require(!isExistedOwner(_target) && owner != _target);
+    function lockup(address _target) onlyOwner public returns (bool success) {
+	    require(!isManageable(_target));
         locked[_target] = now + (LOCKUP_DURATION_TIME * TIME_FACTOR);
         logLockup(_target, now, locked[_target]);
         return true;
     }
     
+    // helper
     function isLockup(address _target) internal constant returns (bool) {
         if(now <= locked[_target])
             return true;
