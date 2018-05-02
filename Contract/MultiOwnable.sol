@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity 0.4.20;
 
 import "./Ownable.sol";
 
@@ -8,18 +8,13 @@ contract MultiOwnable is Ownable {
     event logGrantOwners(address indexed owner);
     event logRevokeOwners(address indexed owner);
     
-    modifier onlyOwners {
+    modifier onlyMutiOwners {
         require(isExistedOwner(msg.sender));
         _;
     }
     
-    modifier onlyOwnersWithMaster {
-        require(isExistedOwner(msg.sender) || msg.sender == owner);
-        _;
-    }
-    
-    modifier onlyOwnersWithoutMaster {
-        require(isExistedOwner(msg.sender) && msg.sender != owner);
+    modifier onlyManagers {
+        require(isManageable(msg.sender));
         _;
     }
     
@@ -43,6 +38,10 @@ contract MultiOwnable is Ownable {
     }
     
     // helper
+    function isManageable(address _owner) internal constant returns (bool) {
+        return isExistedOwner(_owner) || owner == _owner;
+    }
+    
     function isExistedOwner(address _owner) internal constant returns (bool) {
         for(uint8 i = 0; i < MULTI_OWNER_COUNT; ++i) {
             if(owners[i] == _owner) {
@@ -73,9 +72,5 @@ contract MultiOwnable is Ownable {
                 return i;
             }
         }
-    }
-    
-    function isManageable(address _owner) internal constant returns (bool) {
-        return isExistedOwner(_owner) || owner == _owner;
     }
 }
