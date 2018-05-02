@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity 0.4.20;
 
 import "./SafeMath.sol";
 
@@ -17,6 +17,7 @@ contract TokenERC20 {
     mapping (address => uint) public balanceOf;
     mapping (address => mapping (address => uint)) public allowance;
 
+    event logERC20Token(address indexed owner, string name, string symbol, uint8 decimals, uint supply);
     event logTransfer(address indexed from, address indexed to, uint value);
     event logTransferFrom(address indexed from, address indexed to, address indexed spender, uint value);
     event logApproval(address indexed owner, address indexed spender, uint value);
@@ -33,20 +34,22 @@ contract TokenERC20 {
         
         totalSupply = _initialSupply;
         balanceOf[msg.sender] = totalSupply;
+        
+        logERC20Token(msg.sender, name, symbol, decimals, totalSupply);
     }
 
     function _transfer(address _from, address _to, uint _value) internal returns (bool success) {
         require(_to != address(0));
         require(balanceOf[_from] >= _value);
-        require(balanceOf[_to] + _value > balanceOf[_to]);
-        uint previousBalances = balanceOf[_from] + balanceOf[_to];
+        require(SafeMath.add(balanceOf[_to], _value) > balanceOf[_to]);
+        uint previousBalances = SafeMath.add(balanceOf[_from], balanceOf[_to]);
         balanceOf[_from] = balanceOf[_from].sub(_value);
         balanceOf[_to] = balanceOf[_to].add(_value);
         logTransfer(_from, _to, _value);
-        assert(balanceOf[_from] + balanceOf[_to] == previousBalances);
+        assert(SafeMath.add(balanceOf[_from], balanceOf[_to]) == previousBalances);
         return true;
     }
-
+    
     function transfer(address _to, uint _value) public returns (bool success) {
         return _transfer(msg.sender, _to, _value);
     }
