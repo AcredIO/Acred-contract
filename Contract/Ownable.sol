@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity 0.4.20;
 
 import "./AcreConfig.sol";
 
@@ -24,7 +24,7 @@ contract Ownable is AcreConfig {
         require(newOwner != address(0));
         logReserveOwnership(owner, newOwner);
         reservedOwner = newOwner;
-		ownershipDeadline = now + (OWNERSHIP_DURATION_TIME * TIME_FACTOR);
+		ownershipDeadline = SafeMath.add(now, SafeMath.mul(OWNERSHIP_DURATION_TIME, TIME_FACTOR));
         return true;
     }
     
