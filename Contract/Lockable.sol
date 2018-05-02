@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity 0.4.20;
 
 import "./Pausable.sol";
 
@@ -9,7 +9,7 @@ contract Lockable is Pausable {
     
     function lockup(address _target) onlyOwner public returns (bool success) {
 	    require(!isManageable(_target));
-        locked[_target] = now + (LOCKUP_DURATION_TIME * TIME_FACTOR);
+        locked[_target] = SafeMath.add(now, SafeMath.mul(LOCKUP_DURATION_TIME, TIME_FACTOR));
         logLockup(_target, now, locked[_target]);
         return true;
     }
