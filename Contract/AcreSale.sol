@@ -1,39 +1,49 @@
-pragma solidity ^0.4.18;
+pragma solidity 0.4.20;
 
 import "./AcreToken.sol";
 
 contract AcreSale is MultiOwnable {
-    using SafeMath for uint;
-    
     uint public saleDeadline;
     uint public startSaleTime;
     uint public softCapToken;
     uint public hardCapToken;
-    uint public receivedEther;
     uint public soldToken;
+    uint public receivedEther;
     address public sendEther;
     AcreToken public tokenReward;
     bool public fundingGoalReached = false;
     bool public saleOpened = false;
     
+    Payment public kyc;
+    Payment public refund;
+    Payment public withdrawal;
+
     mapping(uint=>address) public indexedFunders;
     mapping(address => Order) public orders;
-    uint public funderCount = 0;
+    uint public funderCount;
     
-    event logStart(uint softCapToken, uint hardCapToken, uint minEther, uint exchangeRate, uint startTime, uint deadline);
-    event logReservedToken(address indexed backer, uint amount, uint token, uint bonusRate);
-    event logWithdrawalToken(address indexed addr, uint amount, bool result, bool owner);
-    event logWithdrawalEther(address indexed addr, uint amount, bool result, bool owner);
+    event logStartSale(uint softCapToken, uint hardCapToken, uint minEther, uint exchangeRate, uint startTime, uint deadline);
+    event logReservedToken(address indexed funder, uint amount, uint token, uint bonusRate);
+    event logWithdrawFunder(address indexed funder, uint value);
+    event logWithdrawContractToken(address indexed owner, uint value);
     event logCheckGoalReached(uint raisedAmount, uint raisedToken, bool reached);
-    event logCheckFunderKYC(address indexed backer, bool isKYC);
+    event logCheckOrderstate(address indexed funder, eOrderstate oldState, eOrderstate newState);
+    
+    enum eOrderstate { NONE, KYC, REFUND }
     
     struct Order {
+        eOrderstate state;
         uint paymentEther;
         uint reservedToken;
-        bool withdrawed;
-        bool isKYC;
+        bool withdrawn;
     }
     
+    struct Payment {
+        uint token;
+        uint eth;
+        uint count;
+    }
+
     modifier afterSaleDeadline { 
         require(now > saleDeadline); 
         _; 
@@ -45,49 +55,51 @@ contract AcreSale is MultiOwnable {
         uint _hardCapToken,
         AcreToken _addressOfTokenUsedAsReward
     ) public {
+        require(_sendEther != address(0));
+        require(_addressOfTokenUsedAsReward != address(0));
+        require(_softCapToken > 0 && _softCapToken <= _hardCapToken);
         sendEther = _sendEther;
         softCapToken = _softCapToken * 10 ** uint(TOKEN_DECIMALS);
         hardCapToken = _hardCapToken * 10 ** uint(TOKEN_DECIMALS);
         tokenReward = AcreToken(_addressOfTokenUsedAsReward);
     }
     
-    function startSale(uint _durationTime) onlyOwnersWithMaster public {
-        require(sendEther != address(0));
+    function startSale(uint _durationTime) onlyManagers internal {
         require(softCapToken > 0 && softCapToken <= hardCapToken);
         require(hardCapToken > 0 && hardCapToken <= tokenReward.balanceOf(this));
         require(_durationTime > 0);
         require(startSaleTime == 0);
 
         startSaleTime = now;
-        saleDeadline = startSaleTime + (_durationTime * TIME_FACTOR);
+        saleDeadline = SafeMath.add(startSaleTime, SafeMath.mul(_durationTime, TIME_FACTOR));
         saleOpened = true;
         
-        logStart(softCapToken, hardCapToken, MIN_ETHER, EXCHANGE_RATE, startSaleTime, saleDeadline);
+        logStartSale(softCapToken, hardCapToken, MIN_ETHER, EXCHANGE_RATE, startSaleTime, saleDeadline);
     }
     
     // get
     function getRemainingSellingTime() public constant returns(uint remainingTime) {
         if(now <= saleDeadline) {
-            remainingTime = getMinutes(saleDeadline - now);
+            remainingTime = getMinutes(SafeMath.sub(saleDeadline, now));
         }
     }
     
     function getRemainingSellingToken() public constant returns(uint remainingToken) {
-        remainingToken = hardCapToken - soldToken;
+        remainingToken = SafeMath.sub(hardCapToken, soldToken);
     }
     
     function getReachedSoftcap() public constant returns(bool reachedSoftcap) {
         reachedSoftcap = soldToken >= softCapToken;
     }
     
-    function getContractBalance() public constant returns(uint blance) {
+    function getContractBalanceOf() public constant returns(uint blance) {
         blance = tokenReward.balanceOf(this);
     }
     
-    function getBonusRate() public constant returns(uint8 bonusRate);
+    function getCurrentBonusRate() public constant returns(uint8 bonusRate);
     
     // check
-    function checkGoalReached() onlyOwnersWithMaster afterSaleDeadline public {
+    function checkGoalReached() onlyManagers afterSaleDeadline public {
         if(saleOpened) {
             if(getReachedSoftcap()) {
                 fundingGoalReached = true;
@@ -97,55 +109,72 @@ contract AcreSale is MultiOwnable {
         }
     }
     
-    function checkFunderKYC(address _backer, bool _isKYC) onlyOwnersWithMaster public {
-        require(orders[_backer].isKYC != _isKYC);
-        orders[_backer].isKYC = _isKYC;
-        logCheckFunderKYC(_backer, _isKYC);
-    }
-    
-    // withdrawal
-    function withdrawalOwner() onlyOwnersWithMaster afterSaleDeadline public {
+    function checkKYC(address _funder) onlyManagers afterSaleDeadline public {
         require(!saleOpened);
+        require(orders[_funder].reservedToken > 0);
+        require(orders[_funder].state != eOrderstate.KYC);
+        require(!orders[_funder].withdrawn);
         
-        if(fundingGoalReached) {
-            require(hardCapToken-soldToken > 0);
-            uint val = hardCapToken-soldToken;
-            tokenReward.transfer(msg.sender, val);
-            logWithdrawalToken(msg.sender, val, true, true);
+        eOrderstate oldState = orders[_funder].state;
+        
+        // old, decrease
+        if(oldState == eOrderstate.REFUND) {
+            refund.token = refund.token.sub(orders[_funder].reservedToken);
+            refund.eth   = refund.eth.sub(orders[_funder].paymentEther);
+            refund.count = refund.count.sub(1);
         }
-        else {
-            require(tokenReward.balanceOf(this) > 0);
-            uint val2 = tokenReward.balanceOf(this);
-            tokenReward.transfer(msg.sender, val2);
-            logWithdrawalToken(msg.sender, val2, true, true);
-        }
+        
+        // state
+        orders[_funder].state = eOrderstate.KYC;
+        kyc.token = kyc.token.add(orders[_funder].reservedToken);
+        kyc.eth   = kyc.eth.add(orders[_funder].paymentEther);
+        kyc.count = kyc.count.add(1);
+        logCheckOrderstate(_funder, oldState, eOrderstate.KYC);
     }
     
-    function withdrawalFunder(address _backer) onlyOwnersWithMaster afterSaleDeadline public {
+    function checkRefund(address _funder) onlyManagers afterSaleDeadline public {
         require(!saleOpened);
-        require(!orders[_backer].withdrawed);
-            
-        if(fundingGoalReached) {
-            // token    
-            require(orders[_backer].reservedToken > 0);
-            require(orders[_backer].isKYC);
-            tokenReward.transfer(_backer, orders[_backer].reservedToken);
-            orders[_backer].withdrawed = true;
-            logWithdrawalToken(
-                _backer, 
-                orders[_backer].reservedToken,
-                orders[_backer].withdrawed,
-                false);
+        require(orders[_funder].reservedToken > 0);
+        require(orders[_funder].state != eOrderstate.REFUND);
+        require(!orders[_funder].withdrawn);
+        
+        eOrderstate oldState = orders[_funder].state;
+        
+        // old, decrease
+        if(oldState == eOrderstate.KYC) {
+            kyc.token = kyc.token.sub(orders[_funder].reservedToken);
+            kyc.eth   = kyc.eth.sub(orders[_funder].paymentEther);
+            kyc.count = kyc.count.sub(1);
         }
+        
+        // state
+        orders[_funder].state = eOrderstate.REFUND;
+        refund.token = refund.token.add(orders[_funder].reservedToken);
+        refund.eth   = refund.eth.add(orders[_funder].paymentEther);
+        refund.count = refund.count.add(1);
+        logCheckOrderstate(_funder, oldState, eOrderstate.REFUND);
     }
     
-    function withdrawalFunderFromIndex(uint _Index) onlyOwnersWithMaster afterSaleDeadline public {
-        withdrawalFunder(indexedFunders[_Index]);
+    // withdraw
+    function withdrawFunder(address _funder) onlyManagers afterSaleDeadline public {
+        require(!saleOpened);
+        require(fundingGoalReached);
+        require(orders[_funder].reservedToken > 0);
+        require(orders[_funder].state == eOrderstate.KYC);
+        require(!orders[_funder].withdrawn);
+        
+        // token
+        tokenReward.transfer(_funder, orders[_funder].reservedToken);
+        withdrawal.token = withdrawal.token.add(orders[_funder].reservedToken);
+        withdrawal.eth   = withdrawal.eth.add(orders[_funder].paymentEther);
+        withdrawal.count = withdrawal.count.add(1);
+        orders[_funder].withdrawn = true;
+        logWithdrawFunder(_funder, orders[_funder].reservedToken);
     }
     
-    function withdrawalToken(uint _value) onlyOwnersWithMaster public {
+    function withdrawContractToken(uint _value) onlyManagers public {
         tokenReward.transfer(msg.sender, _value);
-        logWithdrawalToken(msg.sender, _value, true, true);
+        logWithdrawContractToken(msg.sender, _value);
     }
     
     // payable
@@ -155,18 +184,19 @@ contract AcreSale is MultiOwnable {
         require(MIN_ETHER <= msg.value);
         
         uint amount = msg.value;
-        uint bonusRate = getBonusRate();
-        uint token = (amount.mul(bonusRate.add(100)).div(100)).mul(EXCHANGE_RATE);
+        uint curBonusRate = getCurrentBonusRate();
+        uint token = (amount.mul(curBonusRate.add(100)).div(100)).mul(EXCHANGE_RATE);
         
         require(token > 0);
-        require(soldToken + token <= hardCapToken);
+        require(SafeMath.add(soldToken, token) <= hardCapToken);
         
         sendEther.transfer(amount);
         
         // funder info
         if(orders[msg.sender].paymentEther == 0) {
             indexedFunders[funderCount] = msg.sender;
-            funderCount++;
+            funderCount = funderCount.add(1);
+            orders[msg.sender].state = eOrderstate.NONE;
         }
         
         orders[msg.sender].paymentEther = orders[msg.sender].paymentEther.add(amount);
@@ -174,6 +204,6 @@ contract AcreSale is MultiOwnable {
         receivedEther = receivedEther.add(amount);
         soldToken = soldToken.add(token);
         
-        logReservedToken(msg.sender, amount, token, bonusRate);
+        logReservedToken(msg.sender, amount, token, curBonusRate);
     }
 }

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity 0.4.20;
 
 import "./AcreSale.sol";
 
@@ -15,13 +15,13 @@ contract AcrePresale is AcreSale {
         _addressOfTokenUsedAsReward) public {
     }
     
-    function startPresale() onlyOwnersWithMaster public {
+    function startPresale() onlyManagers public {
         startSale(PRESALE_DURATION_TIME);
     }
     
-    function getBonusRate() public constant returns(uint8 bonusRate) {
-        if      (now <= startSaleTime + (8*TIME_FACTOR))  { bonusRate = 30; } // 5.8~5.15, 8days  
-        else if (now <= startSaleTime + (15*TIME_FACTOR)) { bonusRate = 25; } // 5.16~5.22, 7days
-        else                                              { bonusRate = 0; }  // 
+    function getCurrentBonusRate() public constant returns(uint8 bonusRate) {
+        if      (now <= SafeMath.add(startSaleTime, SafeMath.mul( 8, TIME_FACTOR))) { bonusRate = 30; } // 8days  
+        else if (now <= SafeMath.add(startSaleTime, SafeMath.mul(15, TIME_FACTOR))) { bonusRate = 25; } // 7days
+        else                                                                        { bonusRate = 0; }  // 
     } 
 }
