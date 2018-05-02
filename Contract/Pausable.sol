@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity 0.4.20;
 
 import "./MultiOwnable.sol";
 
@@ -18,20 +18,20 @@ contract Pausable is MultiOwnable {
         _;
     }
     
-    modifier conditionalPaused() {
+    modifier whenConditionalPassing() {
         if(!isManageable(msg.sender)) {
             require(!paused);
         }
         _;
     }
     
-    function pause() onlyOwnersWithMaster whenNotPaused public returns (bool success) {
+    function pause() onlyManagers whenNotPaused public returns (bool success) {
         paused = true;
         logPause();
         return true;
     }
   
-    function unpause() onlyOwnersWithMaster whenPaused public returns (bool success) {
+    function unpause() onlyManagers whenPaused public returns (bool success) {
         paused = false;
         logUnpause();
         return true;
