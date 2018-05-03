@@ -36,6 +36,12 @@ contract AcreToken is Lockable, TokenERC20 {
         return super._transfer(_from, _to, _value);
     }
     
+    function transferFrom(address _from, address _to, uint _value) public returns (bool success) {
+        require(!frozenAccount[msg.sender]); // freeze
+        require(!isLockup(msg.sender));      // lockup
+        return super.transferFrom(_from, _to, _value);
+    }
+    
     function freezeAccount(address _target) onlyManagers public returns (bool success) {
         require(!isManageable(_target));
         require(!frozenAccount[_target]);
