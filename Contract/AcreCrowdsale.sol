@@ -20,9 +20,9 @@ contract AcreCrowdsale is AcreSale {
     }
     
     function getCurrentBonusRate() public constant returns(uint8 bonusRate) {
-        if      (now <= SafeMath.add(startSaleTime, SafeMath.mul( 8, TIME_FACTOR))) { bonusRate = 20; } // 8days
-        else if (now <= SafeMath.add(startSaleTime, SafeMath.mul(15, TIME_FACTOR))) { bonusRate = 15; } // 7days
-        else if (now <= SafeMath.add(startSaleTime, SafeMath.mul(22, TIME_FACTOR))) { bonusRate = 10; } // 7days
+        if      (now <= SafeMath.add(startSaleTime, SafeMath.mul( 7, TIME_FACTOR))) { bonusRate = 20; } // 7days
+        else if (now <= SafeMath.add(startSaleTime, SafeMath.mul(14, TIME_FACTOR))) { bonusRate = 15; } // 7days
+        else if (now <= SafeMath.add(startSaleTime, SafeMath.mul(21, TIME_FACTOR))) { bonusRate = 10; } // 7days
         else                                                                        { bonusRate = 0; }  // 
     }
 }

@@ -30,7 +30,7 @@ contract AcreConfig {
     uint internal constant MIN_ETHER               = 1*1e17; // 0.1 ether
     uint internal constant EXCHANGE_RATE           = 1000;   // 1 eth = 1000 acre
     uint internal constant PRESALE_DURATION_TIME   = 15;     // 15 days
-    uint internal constant CROWDSALE_DURATION_TIME = 22;     // 22 days
+    uint internal constant CROWDSALE_DURATION_TIME = 21;     // 21 days
     
     // helper
     function getDays(uint _time) internal pure returns(uint) {
