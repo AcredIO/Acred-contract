@@ -5,8 +5,8 @@ import "./MultiOwnable.sol";
 contract Pausable is MultiOwnable {
     bool public paused = false;
     
-    event logPause();
-    event logUnpause();
+    event Pause();
+    event Unpause();
     
     modifier whenNotPaused() {
         require(!paused);
@@ -27,13 +27,13 @@ contract Pausable is MultiOwnable {
     
     function pause() onlyManagers whenNotPaused public returns (bool success) {
         paused = true;
-        logPause();
+        Pause();
         return true;
     }
   
     function unpause() onlyManagers whenPaused public returns (bool success) {
         paused = false;
-        logUnpause();
+        Unpause();
         return true;
     }
 }
