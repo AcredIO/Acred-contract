@@ -17,10 +17,10 @@ contract TokenERC20 {
     mapping (address => uint) public balanceOf;
     mapping (address => mapping (address => uint)) public allowance;
 
-    event logERC20Token(address indexed owner, string name, string symbol, uint8 decimals, uint supply);
-    event logTransfer(address indexed from, address indexed to, uint value);
-    event logTransferFrom(address indexed from, address indexed to, address indexed spender, uint value);
-    event logApproval(address indexed owner, address indexed spender, uint value);
+    event ERC20Token(address indexed owner, string name, string symbol, uint8 decimals, uint supply);
+    event Transfer(address indexed from, address indexed to, uint value);
+    event TransferFrom(address indexed from, address indexed to, address indexed spender, uint value);
+    event Approval(address indexed owner, address indexed spender, uint value);
     
     function TokenERC20(
         string _tokenName,
@@ -35,7 +35,7 @@ contract TokenERC20 {
         totalSupply = _initialSupply;
         balanceOf[msg.sender] = totalSupply;
         
-        logERC20Token(msg.sender, name, symbol, decimals, totalSupply);
+        ERC20Token(msg.sender, name, symbol, decimals, totalSupply);
     }
 
     function _transfer(address _from, address _to, uint _value) internal returns (bool success) {
@@ -45,7 +45,7 @@ contract TokenERC20 {
         uint previousBalances = SafeMath.add(balanceOf[_from], balanceOf[_to]);
         balanceOf[_from] = balanceOf[_from].sub(_value);
         balanceOf[_to] = balanceOf[_to].add(_value);
-        logTransfer(_from, _to, _value);
+        Transfer(_from, _to, _value);
         assert(SafeMath.add(balanceOf[_from], balanceOf[_to]) == previousBalances);
         return true;
     }
@@ -58,13 +58,13 @@ contract TokenERC20 {
         require(_value <= allowance[_from][msg.sender]);     
         allowance[_from][msg.sender] = allowance[_from][msg.sender].sub(_value);
         _transfer(_from, _to, _value);
-        logTransferFrom(_from, _to, msg.sender, _value);
+        TransferFrom(_from, _to, msg.sender, _value);
         return true;
     }
 
     function approve(address _spender, uint _value) public returns (bool success) {
         allowance[msg.sender][_spender] = _value;
-        logApproval(msg.sender, _spender, _value);
+        Approval(msg.sender, _spender, _value);
         return true;
     }
 
