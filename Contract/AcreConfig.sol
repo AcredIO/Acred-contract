@@ -21,10 +21,10 @@ contract AcreConfig {
     string internal constant TOKEN_SYMBOL          = "ACRE";
     uint8  internal constant TOKEN_DECIMALS        = 18;
     
-    uint   internal constant INITIAL_SUPPLY        = 1*1e8 * 10 ** uint(TOKEN_DECIMALS); // supply
-    uint   internal constant CAPITAL_SUPPLY        = 4*1e7 * 10 ** uint(TOKEN_DECIMALS); // supply
-    uint   internal constant PRE_PAYMENT_SUPPLY    = 1*1e7 * 10 ** uint(TOKEN_DECIMALS); // supply
-    uint   internal constant MAX_MINING_SUPPLY     = 4*1e8 * 10 ** uint(TOKEN_DECIMALS); // supply
+    uint   internal constant INITIAL_SUPPLY        =   1*1e8 * 10 ** uint(TOKEN_DECIMALS); // supply
+    uint   internal constant CAPITAL_SUPPLY        =  31*1e6 * 10 ** uint(TOKEN_DECIMALS); // supply
+    uint   internal constant PRE_PAYMENT_SUPPLY    =  19*1e6 * 10 ** uint(TOKEN_DECIMALS); // supply
+    uint   internal constant MAX_MINING_SUPPLY     =   4*1e8 * 10 ** uint(TOKEN_DECIMALS); // supply
     
     // Sale
     uint internal constant MIN_ETHER               = 1*1e17; // 0.1 ether
