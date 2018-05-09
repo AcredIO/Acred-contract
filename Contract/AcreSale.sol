@@ -22,12 +22,12 @@ contract AcreSale is MultiOwnable {
     mapping(address => Order) public orders;
     uint public funderCount;
     
-    event logStartSale(uint softCapToken, uint hardCapToken, uint minEther, uint exchangeRate, uint startTime, uint deadline);
-    event logReservedToken(address indexed funder, uint amount, uint token, uint bonusRate);
-    event logWithdrawFunder(address indexed funder, uint value);
-    event logWithdrawContractToken(address indexed owner, uint value);
-    event logCheckGoalReached(uint raisedAmount, uint raisedToken, bool reached);
-    event logCheckOrderstate(address indexed funder, eOrderstate oldState, eOrderstate newState);
+    event StartSale(uint softCapToken, uint hardCapToken, uint minEther, uint exchangeRate, uint startTime, uint deadline);
+    event ReservedToken(address indexed funder, uint amount, uint token, uint bonusRate);
+    event WithdrawFunder(address indexed funder, uint value);
+    event WithdrawContractToken(address indexed owner, uint value);
+    event CheckGoalReached(uint raisedAmount, uint raisedToken, bool reached);
+    event CheckOrderstate(address indexed funder, eOrderstate oldState, eOrderstate newState);
     
     enum eOrderstate { NONE, KYC, REFUND }
     
@@ -74,7 +74,7 @@ contract AcreSale is MultiOwnable {
         saleDeadline = SafeMath.add(startSaleTime, SafeMath.mul(_durationTime, TIME_FACTOR));
         saleOpened = true;
         
-        logStartSale(softCapToken, hardCapToken, MIN_ETHER, EXCHANGE_RATE, startSaleTime, saleDeadline);
+        StartSale(softCapToken, hardCapToken, MIN_ETHER, EXCHANGE_RATE, startSaleTime, saleDeadline);
     }
     
     // get
@@ -88,7 +88,7 @@ contract AcreSale is MultiOwnable {
         remainingToken = SafeMath.sub(hardCapToken, soldToken);
     }
     
-    function getReachedSoftcap() public constant returns(bool reachedSoftcap) {
+    function getSoftcapReached() public constant returns(bool reachedSoftcap) {
         reachedSoftcap = soldToken >= softCapToken;
     }
     
@@ -101,11 +101,11 @@ contract AcreSale is MultiOwnable {
     // check
     function checkGoalReached() onlyManagers afterSaleDeadline public {
         if(saleOpened) {
-            if(getReachedSoftcap()) {
+            if(getSoftcapReached()) {
                 fundingGoalReached = true;
             }
             saleOpened = false;
-            logCheckGoalReached(receivedEther, soldToken, fundingGoalReached);
+            CheckGoalReached(receivedEther, soldToken, fundingGoalReached);
         }
     }
     
@@ -129,7 +129,7 @@ contract AcreSale is MultiOwnable {
         kyc.token = kyc.token.add(orders[_funder].reservedToken);
         kyc.eth   = kyc.eth.add(orders[_funder].paymentEther);
         kyc.count = kyc.count.add(1);
-        logCheckOrderstate(_funder, oldState, eOrderstate.KYC);
+        CheckOrderstate(_funder, oldState, eOrderstate.KYC);
     }
     
     function checkRefund(address _funder) onlyManagers afterSaleDeadline public {
@@ -152,7 +152,7 @@ contract AcreSale is MultiOwnable {
         refund.token = refund.token.add(orders[_funder].reservedToken);
         refund.eth   = refund.eth.add(orders[_funder].paymentEther);
         refund.count = refund.count.add(1);
-        logCheckOrderstate(_funder, oldState, eOrderstate.REFUND);
+        CheckOrderstate(_funder, oldState, eOrderstate.REFUND);
     }
     
     // withdraw
@@ -169,12 +169,12 @@ contract AcreSale is MultiOwnable {
         withdrawal.eth   = withdrawal.eth.add(orders[_funder].paymentEther);
         withdrawal.count = withdrawal.count.add(1);
         orders[_funder].withdrawn = true;
-        logWithdrawFunder(_funder, orders[_funder].reservedToken);
+        WithdrawFunder(_funder, orders[_funder].reservedToken);
     }
     
     function withdrawContractToken(uint _value) onlyManagers public {
         tokenReward.transfer(msg.sender, _value);
-        logWithdrawContractToken(msg.sender, _value);
+        WithdrawContractToken(msg.sender, _value);
     }
     
     // payable
@@ -204,6 +204,6 @@ contract AcreSale is MultiOwnable {
         receivedEther = receivedEther.add(amount);
         soldToken = soldToken.add(token);
         
-        logReservedToken(msg.sender, amount, token, curBonusRate);
+        ReservedToken(msg.sender, amount, token, curBonusRate);
     }
 }
