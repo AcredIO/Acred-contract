@@ -5,8 +5,8 @@ import "./Ownable.sol";
 contract MultiOwnable is Ownable {
     address[] public owners;
     
-    event logGrantOwners(address indexed owner);
-    event logRevokeOwners(address indexed owner);
+    event GrantOwners(address indexed owner);
+    event RevokeOwners(address indexed owner);
     
     modifier onlyMutiOwners {
         require(isExistedOwner(msg.sender));
@@ -26,14 +26,14 @@ contract MultiOwnable is Ownable {
         require(!isExistedOwner(_owner));
         require(isEmptyOwner());
         owners[getEmptyIndex()] = _owner;
-        logGrantOwners(_owner);
+        GrantOwners(_owner);
         return true;
     }
 
     function revokeOwners(address _owner) onlyOwner public returns (bool success) {
         require(isExistedOwner(_owner));
         owners[getOwnerIndex(_owner)] = address(0);
-        logRevokeOwners(_owner);
+        RevokeOwners(_owner);
         return true;
     }
     
