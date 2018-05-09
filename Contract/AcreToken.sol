@@ -12,10 +12,10 @@ contract AcreToken is Lockable, TokenERC20 {
     uint public totalMineSupply;
     mapping (address => bool) public frozenAccount;
 
-    event logFrozenAccount(address indexed target, bool frozen);
-    event logBurn(address indexed owner, uint value);
-    event logMining(address indexed recipient, uint value);
-    event logWithdrawContractToken(address indexed owner, uint value);
+    event FrozenAccount(address indexed target, bool frozen);
+    event Burn(address indexed owner, uint value);
+    event Mining(address indexed recipient, uint value);
+    event WithdrawContractToken(address indexed owner, uint value);
     
     function AcreToken(address _companyCapital, address _prePayment) TokenERC20(TOKEN_NAME, TOKEN_SYMBOL, TOKEN_DECIMALS, INITIAL_SUPPLY) public {
         require(_companyCapital != address(0));
@@ -46,14 +46,14 @@ contract AcreToken is Lockable, TokenERC20 {
         require(!isManageable(_target));
         require(!frozenAccount[_target]);
         frozenAccount[_target] = true;
-        logFrozenAccount(_target, true);
+        FrozenAccount(_target, true);
         return true;
     }
     
     function unfreezeAccount(address _target) onlyManagers public returns (bool success) {
         require(frozenAccount[_target]);
         frozenAccount[_target] = false;
-        logFrozenAccount(_target, false);
+        FrozenAccount(_target, false);
         return true;
     }
     
@@ -61,7 +61,7 @@ contract AcreToken is Lockable, TokenERC20 {
         require(balanceOf[msg.sender] >= _value);   
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(_value);            
         totalSupply = totalSupply.sub(_value);                      
-        logBurn(msg.sender, _value);
+        Burn(msg.sender, _value);
         return true;
     }
     
@@ -73,13 +73,13 @@ contract AcreToken is Lockable, TokenERC20 {
         balanceOf[_recipient] = balanceOf[_recipient].add(_value);
         totalSupply = totalSupply.add(_value);
         totalMineSupply = totalMineSupply.add(_value);
-        logMining(_recipient, _value);
+        Mining(_recipient, _value);
         return true;
     }
     
     function withdrawContractToken(uint _value) onlyManagers public returns (bool success) {
         _transfer(this, msg.sender, _value);
-        logWithdrawContractToken(msg.sender, _value);
+        WithdrawContractToken(msg.sender, _value);
         return true;
     }
     
